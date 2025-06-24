@@ -15,6 +15,7 @@ llama_add_compile_flags()
 if (EMSCRIPTEN)
 else()
     add_subdirectory(batched)
+    add_subdirectory(crux-tools)
     add_subdirectory(embedding)
     add_subdirectory(eval-callback)
 

@@ -100,10 +100,9 @@ int main(int argc, char **argv) {
         }
         std::cout << "],";
 
-        // Calculate and print tensor size in megabytes
+        // Calculate and print tensor size in bytes
         const size_t size_in_bytes = ggml_nbytes(tensor);
-        const double size_in_mb = static_cast<double>(size_in_bytes) / (1024.0 * 1024.0);
-        std::cout << "\"size_mb\": " << size_in_mb << "}";
+        std::cout << "\"size\": " << size_in_bytes << "}";
 
         if (i < n_tensors - 1) {
             std::cout << ",";

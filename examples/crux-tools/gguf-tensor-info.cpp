@@ -1,22 +1,37 @@
-#include "gguf.h" // Use the GGUF API directly for file inspection
-#include "ggml.h" // Required for ggml_context and ggml_tensor
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "ggml.h"  // Required for ggml_context and ggml_tensor
+#include "gguf.h"  // Use the GGUF API directly for file inspection
+
 // A simple function to escape strings for JSON output.
-std::string json_escape(const std::string& s) {
+std::string json_escape(const std::string & s) {
     std::string escaped;
     escaped.reserve(s.length());
     for (char c : s) {
         switch (c) {
-            case '"':  escaped += "\\\""; break;
-            case '\\': escaped += "\\\\"; break;
-            case '\b': escaped += "\\b";  break;
-            case '\f': escaped += "\\f";  break;
-            case '\n': escaped += "\\n";  break;
-            case '\r': escaped += "\\r";  break;
-            case '\t': escaped += "\\t";  break;
+            case '"':
+                escaped += "\\\"";
+                break;
+            case '\\':
+                escaped += "\\\\";
+                break;
+            case '\b':
+                escaped += "\\b";
+                break;
+            case '\f':
+                escaped += "\\f";
+                break;
+            case '\n':
+                escaped += "\\n";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
             default:
                 if ('\x00' <= c && c <= '\x1f') {
                     // Handle non-printable control characters
@@ -32,7 +47,7 @@ std::string json_escape(const std::string& s) {
     return escaped;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv) {
     if (argc < 2) {
         // Output errors as JSON to stderr for consistent parsing by the caller
         std::cerr << "{\"error\": \"Usage: " << argv[0] << " <model_path>\"}" << std::endl;
@@ -55,7 +70,8 @@ int main(int argc, char **argv) {
     struct gguf_context * ctx_gguf = gguf_init_from_file(model_path.c_str(), params);
 
     if (ctx_gguf == nullptr) {
-        std::cerr << "{\"error\": \"Failed to load GGUF file structure from " << json_escape(model_path) << "\"}" << std::endl;
+        std::cerr << "{\"error\": \"Failed to load GGUF file structure from " << json_escape(model_path) << "\"}"
+                  << std::endl;
         return 1;
     }
 
@@ -66,12 +82,12 @@ int main(int argc, char **argv) {
     for (int64_t i = 0; i < n_tensors; ++i) {
         // The correct pattern is to get the tensor name from the GGUF context,
         // then use that name to get the tensor metadata from the GGML context.
-        const char * name = gguf_get_tensor_name(ctx_gguf, i);
+        const char *         name   = gguf_get_tensor_name(ctx_gguf, i);
         struct ggml_tensor * tensor = ggml_get_tensor(ctx_ggml, name);
 
         // On the latest versions, the ggml_tensor struct members are directly accessible.
         const enum ggml_type type = tensor->type;
-        const int64_t * ne = tensor->ne;
+        const int64_t *      ne   = tensor->ne;
 
         // In recent llama.cpp versions, the n_dims member was removed from ggml_tensor.
         // We calculate it by finding the first dimension with a size of 1.

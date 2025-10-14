@@ -1,8 +1,8 @@
 # This file defines the build targets for custom tools for the Crux application.
 
-add_executable(gguf-metadata-get gguf-metadata-get.cpp)
+add_executable(gguf-metadata-dump gguf-metadata-dump.cpp)
 
-target_link_libraries(gguf-metadata-get PRIVATE llama)
+target_link_libraries(gguf-metadata-dump PRIVATE llama)
 
-add_executable(gguf-tensor-info gguf-tensor-info.cpp)
-target_link_libraries(gguf-tensor-info PRIVATE llama)
+add_executable(gguf-tensor-dump gguf-tensor-dump.cpp)
+target_link_libraries(gguf-tensor-dump PRIVATE llama)

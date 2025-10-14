@@ -6,15 +6,17 @@ from utils import *
 
 server = ServerPreset.tinyllama2()
 
+JSON_MULTIMODAL_KEY = "multimodal_data"
+JSON_PROMPT_STRING_KEY = "prompt_string"
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(autouse=True)
 def create_server():
     global server
     server = ServerPreset.tinyllama2()
 
 @pytest.mark.parametrize("prompt,n_predict,re_content,n_prompt,n_predicted,truncated,return_tokens", [
     ("I believe the meaning of life is", 8, "(going|bed)+", 18, 8, False, False),
-    ("Write a joke about AI from a very long prompt which will not be truncated", 256, "(princesses|everyone|kids|Anna|forest)+", 46, 64, False, True),
+    ("Write a joke about AI from a very long prompt which will not be truncated", 64, "(princesses|everyone|kids|Anna|forest)+", 46, 64, False, True),
 ])
 def test_completion(prompt: str, n_predict: int, re_content: str, n_prompt: int, n_predicted: int, truncated: bool, return_tokens: bool):
     global server
@@ -39,7 +41,7 @@ def test_completion(prompt: str, n_predict: int, re_content: str, n_prompt: int,
 
 @pytest.mark.parametrize("prompt,n_predict,re_content,n_prompt,n_predicted,truncated", [
     ("I believe the meaning of life is", 8, "(going|bed)+", 18, 8, False),
-    ("Write a joke about AI from a very long prompt which will not be truncated", 256, "(princesses|everyone|kids|Anna|forest)+", 46, 64, False),
+    ("Write a joke about AI from a very long prompt which will not be truncated", 64, "(princesses|everyone|kids|Anna|forest)+", 46, 64, False),
 ])
 def test_completion_stream(prompt: str, n_predict: int, re_content: str, n_prompt: int, n_predicted: int, truncated: bool):
     global server
@@ -229,8 +231,30 @@ def test_nocache_long_input_prompt():
         "temperature": 1.0,
         "cache_prompt": False,
     })
+    assert res.status_code == 400
+
+def test_json_prompt_no_mtmd():
+    global server
+    server.start()
+    res = server.make_request("POST", "/completion", data={
+        "prompt": { JSON_PROMPT_STRING_KEY: "I believe the meaning of life is" },
+        "seed": 42,
+        "temperature": 1.0,
+        "cache_prompt": False,
+    })
     assert res.status_code == 200
 
+def test_json_prompt_mtm_error_when_not_supported():
+    global server
+    server.start()
+    res = server.make_request("POST", "/completion", data={
+        "prompt": { JSON_PROMPT_STRING_KEY: "I believe the meaning of life is <__media__>", JSON_MULTIMODAL_KEY: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" },
+        "seed": 42,
+        "temperature": 1.0,
+        "cache_prompt": False,
+    })
+    # MTMD is disabled on this model, so this should fail.
+    assert res.status_code != 200
 
 def test_completion_with_tokens_input():
     global server
@@ -263,6 +287,20 @@ def test_completion_with_tokens_input():
     # mixed string and tokens
     res = server.make_request("POST", "/completion", data={
         "prompt": [tokens, prompt_str],
+    })
+    assert res.status_code == 200
+    assert type(res.body) == list
+    assert len(res.body) == 2
+    assert res.body[0]["content"] == res.body[1]["content"]
+
+    # mixed JSON and tokens
+    res = server.make_request("POST", "/completion", data={
+        "prompt": [
+            tokens,
+            {
+                JSON_PROMPT_STRING_KEY: "I believe the meaning of life is",
+            },
+        ],
     })
     assert res.status_code == 200
     assert type(res.body) == list
